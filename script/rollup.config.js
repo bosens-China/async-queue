@@ -66,7 +66,7 @@ export default defineConfig(
             ]),
 
         // 禁止输出版权信息
-        terser({ format: { comments: false } }),
+        // terser({ format: { comments: false } }),
         copyPlugin({
           targets: copy.map((item) => {
             return { src: item, dest: dist };

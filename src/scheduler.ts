@@ -83,7 +83,15 @@ class Scheduler {
 
   // 获取任务列表
   getTaskList(status?: executionStatus) {
-    const { executedSymbol } = this;
+    const { executedSymbol, state } = this;
+    /*
+     * 每次run的时候都会调用
+     * 且执行resove和reject都会清理掉executedSymbol属性，可能导致重复运行
+     * 所以判断状态，不对直接return
+     */
+    if (state !== 'operation') {
+      return [];
+    }
     const unexecuted = this.tasks.filter((fn) => {
       return fn[executedSymbol] === status;
     });
@@ -107,7 +115,7 @@ class Scheduler {
       value[executedSymbol] = executionStatus.start;
       // 取当前的下标值
       const index = tasks.indexOf(value);
-      const retryFn = this.asyncRetry(value);
+      const retryFn = this.asyncRetry(value, index);
       this.queue.push(retryFn);
       this.actuator(value, retryFn, index);
     }
@@ -132,7 +140,7 @@ class Scheduler {
   /*
    * 给定函数，将其转化为重试函数
    */
-  asyncRetry(fn: Function) {
+  asyncRetry(fn: Function, index: number) {
     const { retryCount } = this.option;
     if (!retryCount) {
       return fn;
@@ -148,8 +156,12 @@ class Scheduler {
               return;
             }
             this.retryMap.set(fn, count + 1);
-            // 继续执行，利用promise特性
-            resolve(this.asyncRetry(fn)());
+            // 重试任务也要受waitTime影响
+            const { waitTime } = this.option;
+            wait(isFunction(waitTime) ? waitTime(index) : waitTime).then(() => {
+              // 继续执行，利用promise特性
+              resolve(this.asyncRetry(fn, index)());
+            });
           });
       });
     };

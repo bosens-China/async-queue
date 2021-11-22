@@ -125,7 +125,7 @@ export interface MergeValue {
    * @return {*}  {{ cancen: () => void }}
    * @memberof MergeValue
    */
-  addListener(fn: Function): { cancen: () => void };
+  addListener(fn: (value: Change) => void): { cancen: () => void };
 
   /**
    * 删除变化监听器

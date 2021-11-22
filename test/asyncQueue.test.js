@@ -58,6 +58,20 @@ test(`retry`, async () => {
   await expect(asyncQueue(packingArray(pro), { retryCount: 1 })).resolves.toEqual([new Error(1)]);
 });
 
+test(`retry waitTime`, async () => {
+  let i = 0;
+  const pro = () => {
+    if (i > 3) {
+      return Promise.resolve(4);
+    }
+    return Promise.reject(i++);
+  };
+  await asyncTime(async () => {
+    const result = await asyncQueue(packingArray(pro), { retryCount: 4, waitTime: 100 });
+    expect(result).toEqual([4]);
+  }, 400);
+});
+
 test(`max test one`, async () => {
   const pro1 = () => wait(100).then(() => 1);
   const pro2 = () => wait(200).then(() => 2);
