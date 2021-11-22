@@ -7,10 +7,6 @@ enum executionStatus {
   'end',
 }
 
-// 判断当前队列有没有被执行的依据
-const executedSymbol = Symbol('executed');
-const resultSymbol = Symbol('result');
-
 class Scheduler {
   option: Option;
   tasks: Array<Function>;
@@ -22,6 +18,10 @@ class Scheduler {
 
   resolveFn!: (value: unknown) => void;
   rejectFn!: (reason?: any) => void;
+
+  // 判断当前队列有没有被执行的依据
+  executedSymbol = Symbol('executed');
+  resultSymbol = Symbol('result');
 
   constructor(tasks: Array<Function>, option: Option, event: Event) {
     this.option = option;
@@ -76,6 +76,7 @@ class Scheduler {
 
   // 获取完成列表
   getTaskList(status?: executionStatus) {
+    const { executedSymbol } = this;
     const unexecuted = this.tasks.filter((fn) => {
       return fn[executedSymbol] === status;
     });
@@ -83,16 +84,17 @@ class Scheduler {
   }
 
   run() {
-    const { tasks, option } = this;
+    const { tasks, option, executedSymbol } = this;
     // 获取未开始任务的列表，如果没有说明执行完成
     const unexecuted = this.getTaskList();
+    const max = option.max - this.queue.length;
 
-    const max = option.max > unexecuted.length ? unexecuted.length : option.max;
-    // 根据flowMode不同，决定了j的值
-    const j = max - this.queue.length;
-
-    for (let i = 0; i < j; i++) {
-      const value = unexecuted[i]!;
+    for (let i = 0; i < max; i++) {
+      const value = unexecuted[i];
+      // 注意可能存在空值的情况，例如tasks还有1个，max为2，这样取值就会取到空
+      if (!isFunction(value)) {
+        continue;
+      }
       value[executedSymbol] = executionStatus.start;
       // 取当前的下标值
       const index = tasks.indexOf(value);
@@ -103,8 +105,15 @@ class Scheduler {
   }
 
   promiseExecuter(resolve: (value: unknown) => void, reject: (reason?: any) => void) {
-    this.resolveFn = resolve;
-    this.rejectFn = reject;
+    // 将函数包裹一下，待返回promise状态的时候进行副作用的清理
+    this.resolveFn = (value) => {
+      this.clear();
+      resolve(value);
+    };
+    this.rejectFn = (reason) => {
+      this.clear();
+      reject(reason);
+    };
     this.state = 'operation';
     this.run();
   }
@@ -140,6 +149,7 @@ class Scheduler {
   }
 
   actuator(fn: Function, retryFn: Function, index: number) {
+    const { executedSymbol, resultSymbol } = this;
     Promise.resolve(retryFn())
       .then((data) => {
         fn[executedSymbol] = executionStatus.end;
@@ -156,6 +166,7 @@ class Scheduler {
             return;
           }
           this.rejectFn(e);
+
           this.state = 'error';
           return;
         }
@@ -168,26 +179,18 @@ class Scheduler {
           data: fn[resultSymbol],
           progress: this.progress(),
         });
+
         // 删除queuq任务
         const subscript = this.queue.indexOf(retryFn);
         if (subscript > -1) {
           this.queue.splice(subscript, 1);
         }
-
-        // 等待单次任务间隔
-        const { waitTime } = this.option;
-        if (!waitTime) {
-          this.next();
-          return;
-        }
-
-        wait(isFunction(waitTime) ? waitTime(index) : waitTime).then(() => {
-          this.next();
-        });
+        this.next(index);
       });
   }
 
   isEnd() {
+    const { resultSymbol } = this;
     const finish = this.getTaskList(executionStatus.end).length === this.tasks.length;
     if (finish) {
       if (this.err) {
@@ -202,26 +205,23 @@ class Scheduler {
     return finish;
   }
 
-  next() {
+  async next(index: number) {
     // 如果不符合条件返回，必须未进行中且没有
     if (this.state !== 'operation' || this.err || this.isEnd()) {
       return;
     }
-
+    // 等待单次任务间隔
+    const { waitTime } = this.option;
+    await wait(isFunction(waitTime) ? waitTime(index) : waitTime);
     if (this.option.flowMode) {
       this.run();
       return;
     }
+    // 批次任务间隔
     if (!this.queue.length) {
       const { waitTaskTime } = this.option;
-      if (!waitTaskTime) {
-        this.run();
-        return;
-      }
-      // 等待任务批次时间
-      wait(isFunction(waitTaskTime) ? waitTaskTime() : waitTaskTime).then(() => {
-        this.run();
-      });
+      await wait(isFunction(waitTaskTime) ? waitTaskTime() : waitTaskTime);
+      this.run();
     }
   }
 
@@ -239,7 +239,19 @@ class Scheduler {
     }
     const executed = this.getTaskList(executionStatus.end);
     this.resolveFn(executed);
+
     this.state = 'end';
+  }
+
+  /**
+   * 因为取值根据symbol来的，但是这个是个副作用的代码，在reject或者resolve的时候进行清理
+   */
+  clear() {
+    const { tasks, resultSymbol, executedSymbol } = this;
+    tasks.forEach((fn) => {
+      Reflect.deleteProperty(fn, resultSymbol);
+      Reflect.deleteProperty(fn, executedSymbol);
+    });
   }
 }
 

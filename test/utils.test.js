@@ -28,4 +28,7 @@ test(`packing`, async () => {
 test(`packingArray`, async () => {
   const reuslt = packingArray(1, 2, 3);
   expect(reuslt.every((item) => isFunction(item))).toBeTruthy();
+  expect(reuslt.length).toBe(3);
+  expect(packingArray([1, 2, 3]).every((fn) => isFunction(fn))).toBeTruthy();
+  expect(packingArray([1, 2, 3]).length).toBe(3);
 });

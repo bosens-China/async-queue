@@ -37,7 +37,7 @@ git push --set-upstream origin master
 
 [字段参考地址](https://juejin.cn/post/6868073747174621197)
 
-<!-- <@gitPath>为git仓库地址，必填 -->
+ <@gitPath>为git仓库地址，必填
 
 ### 发布
 

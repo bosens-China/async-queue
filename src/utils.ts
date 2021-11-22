@@ -3,6 +3,9 @@ export const isFunction = (fn: any): fn is Function => typeof fn === 'function';
 export const isObjectLink = (obj: any): obj is Record<any, any> => typeof obj === 'object' && obj;
 
 export const wait = (time: number) => {
+  if (!Number(time)) {
+    return Promise.resolve();
+  }
   return new Promise((resolve) => {
     setTimeout(() => {
       resolve(undefined);
@@ -17,9 +20,17 @@ export const packing = (value: any) => {
   return () => value;
 };
 
-export const packingArray = (...value: Array<any>) => {
-  if (!Array.isArray(value)) {
-    return [];
+export const packingArray = (value: any, ...rest: Array<any>) => {
+  const arr: Array<any> = [];
+  if (rest.length) {
+    arr.push(value);
+    arr.push(...rest);
+  } else {
+    if (Array.isArray(value)) {
+      arr.push(...value);
+    } else {
+      arr.push(value);
+    }
   }
-  return value.map((item) => packing(item));
+  return arr.map((item) => packing(item));
 };
