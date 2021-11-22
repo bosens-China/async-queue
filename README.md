@@ -8,7 +8,7 @@ tasks = [1s,2s,4s,3s];
 max = 2
 # 并发
 task => [1s,2s] => [4s,3s] # 完成时间6s
-# 并发
+# 流
 task => [1s,2s] => [4s,2s] => [4s,3s] # 完成时间5s
 
 ```
@@ -52,14 +52,14 @@ App();
 
 **option**
 
-| 名称         | 类型                                      | 必填                                                          | 描述                                                       |
-| ------------ | ----------------------------------------- | ------------------------------------------------------------- | ---------------------------------------------------------- |
-| max          | `number`                                  | `false`                                                       | 最大请求数                                                 |
-| waitTime     | `number` or `((index: number) => number)` | `false`                                                       | 每次请求完成后等待时间                                     |
-| waitTaskTime | `number` or `(() => number)`              | `false`                                                       | 每批任务结束后等待时间，**注意**在`flowMode`模式下不起作用 |
-| throwError   | `boolean` or `false`                      | 是否抛出错误，默认为`false`，在发生错误的时候将错误值记录下来 |
-| retryCount   | `number` or `false`                       | 每个任务重试次数                                              |
-| flowMode     | `boolean` or `false`                      | 是否为流模式，默认为并发模式                                  |
+| 名称         | 类型                                      | 必填    | 描述                                                          |
+| ------------ | ----------------------------------------- | ------- | ------------------------------------------------------------- |
+| max          | `number`                                  | `false` | 最大请求数                                                    |
+| waitTime     | `number` or `((index: number) => number)` | `false` | 每次请求完成后等待时间                                        |
+| waitTaskTime | `number` or `(() => number)`              | `false` | 每批任务结束后等待时间，**注意**在`flowMode`模式下不起作用    |
+| throwError   | `boolean` or `false`                      | `false` | 是否抛出错误，默认为`false`，在发生错误的时候将错误值记录下来 |
+| retryCount   | `number` or `false`                       | `false` | 每个任务重试次数                                              |
+| flowMode     | `boolean` or `false`                      | `false` | 是否为流模式，默认为并发模式                                  |
 
 **ReturnValue**
 
