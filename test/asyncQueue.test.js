@@ -143,7 +143,7 @@ test(`waitTaskTime`, async () => {
   }, 300);
 });
 
-test.only(`waitTime + waitTaskTime`, async () => {
+test(`waitTime + waitTaskTime`, async () => {
   await asyncTime(async () => {
     const waitTaskTime = jest.fn(() => 100);
     const waitTime = jest.fn(() => 100);
@@ -154,4 +154,111 @@ test.only(`waitTime + waitTaskTime`, async () => {
     expect(waitTaskTime.mock.calls).toEqual([[], []]);
     expect(reuslt).toEqual([1, 2, 3]);
   }, 400);
+});
+
+test(`suspend`, async () => {
+  await asyncTime(async () => {
+    const result = asyncQueue(packingArray(1, 2, 3));
+    result.suspend();
+    await wait(100);
+    result.operation();
+    await expect(result).resolves.toEqual([1, 2, 3]);
+  }, 100);
+});
+
+test(`termination`, async () => {
+  const result = asyncQueue(packingArray(1, 2, 3, 4), { waitTime: 10 });
+  await wait(10);
+  result.termination();
+  await expect(result).resolves.toEqual([1]);
+});
+
+test(`tasks,push`, async () => {
+  const result = asyncQueue(packingArray(1, 2, 3), { waitTime: 100 });
+  expect(result.tasks.length).toBe(3);
+  result.push(() => 4);
+  expect(result.tasks.length).toBe(4);
+  await expect(result).resolves.toEqual([1, 2, 3, 4]);
+});
+
+test(`splice`, async () => {
+  const result = asyncQueue(packingArray(1, 2, 3), { waitTime: 100 });
+  // splice大概分为两种，插入和删除
+  result.splice(0, 0, () => 4);
+  // 删除原来1的任务
+  result.splice(1, 1);
+  await expect(result).resolves.toEqual([4, 2, 3]);
+});
+
+test(`state`, async () => {
+  const result = asyncQueue(packingArray(1, 2, 3), { waitTime: 100 });
+  expect(result.state).toBe('operation');
+  result.suspend();
+  expect(result.state).toBe('suspend');
+  result.operation();
+  expect(result.state).toBe('operation');
+  await result;
+  expect(result.state).toBe('end');
+});
+
+test(`state error`, async () => {
+  const result = asyncQueue(packingArray(Promise.reject(123)), { throwError: true });
+  try {
+    await result;
+  } catch {}
+  expect(result.state).toBe('error');
+});
+
+test(`addListener`, async () => {
+  const fn = jest.fn();
+  const result = asyncQueue(packingArray(1, 2, 3));
+  result.addListener(fn);
+  await result;
+  expect(fn.mock.calls.length).toBe(3);
+  expect(fn.mock.calls).toEqual([
+    [
+      {
+        index: 0,
+        status: 'success',
+        data: 1,
+        progress: 1 / 3,
+        total: 3,
+      },
+    ],
+    [
+      {
+        index: 1,
+        status: 'success',
+        data: 2,
+        progress: 2 / 3,
+        total: 3,
+      },
+    ],
+    [
+      {
+        index: 2,
+        status: 'success',
+        data: 3,
+        progress: 3 / 3,
+        total: 3,
+      },
+    ],
+  ]);
+});
+
+test(`addListener oncalcel`, async () => {
+  const fn = jest.fn();
+  const result = asyncQueue(packingArray(1, 2, 3));
+  const value = result.addListener(fn);
+  value.cancen();
+  await result;
+  expect(fn.mock.calls.length).toBe(0);
+});
+test(`removeListener`, async () => {
+  const fn = jest.fn();
+  const result = asyncQueue(packingArray(1, 2, 3));
+  result.addListener(fn);
+  result.removeListener(fn);
+  await result;
+  expect(fn.mock.calls.length).toBe(0);
 });

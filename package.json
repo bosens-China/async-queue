@@ -1,10 +1,23 @@
 {
-  "name": "async-queue",
+  "name": "@boses/async-queue",
   "version": "1.0.0",
-  "preview": true,
+  "preview": false,
   "license": "MIT",
-  "description": "管理异步队列工具",
+  "description": "Manage asynchronous queues",
   "author": "boses",
+  "keywords": [
+    "async",
+    "queue"
+  ],
+  "homepage": "https://github.com/bosens-China/async-queue",
+  "bugs": "https://github.com/bosens-China/async-queue/issues",
+  "repository": "https://github.com/bosens-China/async-queue",
+  "files": [
+    "dist"
+  ],
+  "main": "./dist/main.js",
+  "module": "./dist/main.es.js",
+  "types": "./dist/main.d.ts",
   "devDependencies": {
     "@babel/core": "^7.15.8",
     "@babel/plugin-transform-runtime": "^7.16.0",

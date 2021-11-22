@@ -9,6 +9,7 @@ const config = [
   {
     src: path.join(cwd(), './src/main.ts'),
     format: 'es',
+    copy: ['./src/type.d.ts'],
   },
 ];
 

@@ -1,4 +1,4 @@
-import { Option } from './main';
+import { Change, Option } from './type';
 import Event from './event';
 import { isFunction, wait } from './utils';
 
@@ -10,21 +10,28 @@ enum executionStatus {
 class Scheduler {
   option: Option;
   tasks: Array<Function>;
-  state: 'state' | 'suspend' | 'error' | 'operation' | 'end' = 'state';
+  state: 'start' | 'suspend' | 'operation' | 'end' | 'error' = 'start';
+  // 重试的次数，用WeakMap是为了防止出现垃圾回收问题
   retryMap: WeakMap<Function, number> = new WeakMap();
   event: Event;
+  // 队列，根据此参数控制max的值不要超出边界
   queue: Array<Function> = [];
   err: Error | null = null;
 
   resolveFn!: (value: unknown) => void;
   rejectFn!: (reason?: any) => void;
 
-  // 判断当前队列有没有被执行的依据
+  /*
+   * 之所以采用Symbol是为了执行一些副作用代码而防止出现冲突
+   */
+  // 执行状态
   executedSymbol = Symbol('executed');
+  // 执行结果
   resultSymbol = Symbol('result');
 
   constructor(tasks: Array<Function>, option: Option, event: Event) {
     this.option = option;
+    // 参数校验，必须接收function
     this.tasks = tasks.map((fn) => {
       if (!isFunction(fn)) {
         throw new Error(`tasks must be a function!`);
@@ -35,7 +42,7 @@ class Scheduler {
   }
 
   push(...rest: Array<Function>) {
-    this.splice(0, this.tasks.length, ...rest);
+    this.splice(this.tasks.length, 0, ...rest);
   }
 
   /* eslint-disable no-dupe-class-members */
@@ -74,7 +81,7 @@ class Scheduler {
     this.run();
   }
 
-  // 获取完成列表
+  // 获取任务列表
   getTaskList(status?: executionStatus) {
     const { executedSymbol } = this;
     const unexecuted = this.tasks.filter((fn) => {
@@ -83,10 +90,12 @@ class Scheduler {
     return unexecuted;
   }
 
+  // 执行器
   run() {
     const { tasks, option, executedSymbol } = this;
-    // 获取未开始任务的列表，如果没有说明执行完成
+    // 获取还未开始的任务
     const unexecuted = this.getTaskList();
+    // 如果是flowMode为true下需要减去正在队列的值
     const max = option.max - this.queue.length;
 
     for (let i = 0; i < max; i++) {
@@ -107,10 +116,12 @@ class Scheduler {
   promiseExecuter(resolve: (value: unknown) => void, reject: (reason?: any) => void) {
     // 将函数包裹一下，待返回promise状态的时候进行副作用的清理
     this.resolveFn = (value) => {
+      this.state = 'end';
       this.clear();
       resolve(value);
     };
     this.rejectFn = (reason) => {
+      this.state = 'error';
       this.clear();
       reject(reason);
     };
@@ -118,6 +129,9 @@ class Scheduler {
     this.run();
   }
 
+  /*
+   * 给定函数，将其转化为重试函数
+   */
   asyncRetry(fn: Function) {
     const { retryCount } = this.option;
     if (!retryCount) {
@@ -134,7 +148,7 @@ class Scheduler {
               return;
             }
             this.retryMap.set(fn, count + 1);
-            // 继续执行
+            // 继续执行，利用promise特性
             resolve(this.asyncRetry(fn)());
           });
       });
@@ -143,11 +157,13 @@ class Scheduler {
 
   // 返回进度
   progress() {
-    // 获取完成的列表跟总任务对比
     const executed = this.getTaskList(executionStatus.end);
     return executed.length / this.tasks.length;
   }
 
+  /**
+   * 每次执行的task都会经过这里，做中转处理
+   */
   actuator(fn: Function, retryFn: Function, index: number) {
     const { executedSymbol, resultSymbol } = this;
     Promise.resolve(retryFn())
@@ -166,18 +182,17 @@ class Scheduler {
             return;
           }
           this.rejectFn(e);
-
-          this.state = 'error';
           return;
         }
         fn[executedSymbol] = executionStatus.end;
       })
       .finally(() => {
-        this.event.emit({
+        this.event.emit<Change>({
           index,
           status: fn[resultSymbol] instanceof Error ? 'error' : 'success',
           data: fn[resultSymbol],
           progress: this.progress(),
+          total: this.tasks.length,
         });
 
         // 删除queuq任务
@@ -195,10 +210,8 @@ class Scheduler {
     if (finish) {
       if (this.err) {
         this.rejectFn(this.err);
-        this.state = 'error';
         return;
       }
-      this.state = 'end';
       const result = this.tasks.map((fn) => fn[resultSymbol]);
       this.resolveFn(result);
     }
@@ -206,7 +219,7 @@ class Scheduler {
   }
 
   async next(index: number) {
-    // 如果不符合条件返回，必须未进行中且没有
+    // 如果不符合条件返回
     if (this.state !== 'operation' || this.err || this.isEnd()) {
       return;
     }
@@ -234,13 +247,10 @@ class Scheduler {
     }
     if (this.err) {
       this.rejectFn(this.err);
-      this.state = 'error';
       return;
     }
-    const executed = this.getTaskList(executionStatus.end);
+    const executed = this.getTaskList(executionStatus.end).map((fn) => fn[this.resultSymbol]);
     this.resolveFn(executed);
-
-    this.state = 'end';
   }
 
   /**

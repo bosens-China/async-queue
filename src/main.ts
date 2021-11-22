@@ -1,45 +1,12 @@
 import Scheduler from './scheduler';
-import { isFunction, isObjectLink, packing, packingArray } from './utils';
+import { isFunction, isObjectLink, packing, packingArray, assign } from './utils';
 import Event from './event';
-
-export interface Option {
-  // 最大请求数
-  max: number;
-  // 每次请求完成等待时间
-  waitTime: number | ((index: number) => number);
-  // 每批任务单次等待时间
-  waitTaskTime: number | (() => number);
-  // 是否抛出错误
-  throwError: boolean;
-  // 每个任务重试次数
-  retryCount: number;
-  // 是否为流模式
-  flowMode: boolean;
-}
-
-interface Change {
-  index: number;
-  status: 'error' | 'success';
-  data: any;
-  progress: number;
-}
-interface MergeValue {
-  option: Option;
-  tasks: Array<Function>;
-  state: 'state' | 'suspend' | 'error' | 'operation' | 'end';
-  push(...rest: Array<Function>): void;
-  splice(start: number, deleteCount?: number);
-  splice(start: number, deleteCount: number, ...rest: Array<Function>);
-  suspend(): void;
-  operation(): void;
-  termination(): void;
-  onChange(fn: (value: Change) => { cancel: () => void }): void;
-}
+import { MergeValue, Option } from './type';
 
 interface AsyncQueueValue<T> extends MergeValue, Promise<Array<T>> {}
 
-const asyncQueue = <T = unknown>(task: Array<Function>, option: Partial<Option>): AsyncQueueValue<T> => {
-  if (!Array.isArray(task)) {
+const asyncQueue = <T = unknown>(tasks: Array<Function>, option?: Partial<Option>): AsyncQueueValue<T> => {
+  if (!Array.isArray(tasks)) {
     throw new Error(`Task must be array!`);
   }
   const {
@@ -55,7 +22,7 @@ const asyncQueue = <T = unknown>(task: Array<Function>, option: Partial<Option>)
 
   // 将参数细化，防止出现边界情况
   const scheduler = new Scheduler(
-    task,
+    tasks,
     {
       max: max >= 1 ? max : 1,
       waitTime: isFunction(waitTime) ? waitTime : waitTime >= 0 ? waitTime : 0,
@@ -68,12 +35,13 @@ const asyncQueue = <T = unknown>(task: Array<Function>, option: Partial<Option>)
   );
 
   const mergeValue: MergeValue = {
-    onChange(fn) {
+    addListener(fn) {
       event.addListener(fn);
       return {
         cancen: () => event.removeListener(fn),
       };
     },
+    removeListener: event.removeListener.bind(event),
     push: scheduler.push.bind(scheduler),
     splice: scheduler.splice.bind(scheduler),
     suspend: scheduler.suspend.bind(scheduler),
@@ -89,8 +57,8 @@ const asyncQueue = <T = unknown>(task: Array<Function>, option: Partial<Option>)
       return scheduler.option;
     },
   };
-  const pro = !task.length ? Promise.resolve([]) : new Promise(scheduler.promiseExecuter.bind(scheduler));
-  return Object.assign(pro, mergeValue) as AsyncQueueValue<T>;
+  const pro = !tasks.length ? Promise.resolve([]) : new Promise(scheduler.promiseExecuter.bind(scheduler));
+  return assign(pro, mergeValue) as AsyncQueueValue<T>;
 };
 
 export { asyncQueue, packing, packingArray };

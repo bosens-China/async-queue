@@ -1,4 +1,6 @@
-// 简化版发布订阅模式
+/*
+ * 简易版发布订阅
+ */
 
 import { isFunction } from './utils';
 
@@ -19,7 +21,7 @@ class Event {
     this.list.splice(index, 1);
   }
 
-  emit(...rest: Array<any>) {
+  emit<T = any>(...rest: Array<T>) {
     this.list.forEach((fn) => {
       fn(...rest);
     });

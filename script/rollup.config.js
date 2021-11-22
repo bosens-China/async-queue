@@ -49,6 +49,7 @@ export default defineConfig(
                   // 覆盖tsconfig.json的配置信息
                   compilerOptions: {
                     module: 'ESNext',
+                    declaration: true,
                   },
                 },
               }),
@@ -64,7 +65,8 @@ export default defineConfig(
               }),
             ]),
 
-        terser(),
+        // 禁止输出版权信息
+        terser({ format: { comments: false } }),
         copyPlugin({
           targets: copy.map((item) => {
             return { src: item, dest: dist };
