@@ -19,36 +19,6 @@ export const wait = (time: number) => {
 };
 
 /**
- * 将参数转化为 () => value 形式
- */
-export const packing = (value: any) => {
-  if (isFunction(value)) {
-    return value;
-  }
-  return () => value;
-};
-
-/**
- * 将参数转化为函数调用，有两种调用方式
- * 1. 直接传递([1,2])的形式
- * 2. 传递(1)形式
- */
-export const packingArray = (value: any, ...rest: Array<any>) => {
-  const arr: Array<any> = [];
-  if (rest.length) {
-    arr.push(value);
-    arr.push(...rest);
-  } else {
-    if (Array.isArray(value)) {
-      arr.push(...value);
-    } else {
-      arr.push(value);
-    }
-  }
-  return arr.map((item) => packing(item));
-};
-
-/**
  * 简单版oject.assign
  * 主要是为了解决assing拷贝get和set属性失效问题
  */

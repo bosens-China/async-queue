@@ -274,6 +274,11 @@ class Scheduler {
       Reflect.deleteProperty(fn, resultSymbol);
       Reflect.deleteProperty(fn, executedSymbol);
     });
+    /*
+     * 做一些回收
+     */
+    this.event.destroy();
+    this.tasks = [];
   }
 }
 

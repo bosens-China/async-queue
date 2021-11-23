@@ -26,6 +26,10 @@ class Event {
       fn(...rest);
     });
   }
+
+  destroy() {
+    this.list = [];
+  }
 }
 
 export default Event;

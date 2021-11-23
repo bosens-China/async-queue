@@ -1,5 +1,5 @@
 import Scheduler from './scheduler';
-import { isFunction, isObjectLink, packing, packingArray, assign } from './utils';
+import { isFunction, isObjectLink, assign } from './utils';
 import Event from './event';
 import { MergeValue, Option } from './type';
 
@@ -61,4 +61,4 @@ const asyncQueue = <T = unknown>(tasks: Array<Function>, option?: Partial<Option
   return assign(pro, mergeValue) as AsyncQueueValue<T>;
 };
 
-export { asyncQueue, packing, packingArray };
+export { asyncQueue };

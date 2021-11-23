@@ -41,23 +41,17 @@ App();
 import { asyncQueue } from '@boses/async-queue';
 ```
 
-## Api
-
-`import { asyncQueue, packing, packingArray } form '@boses/async-queue'`
-
-模块可导出上述方法
-
-### asyncQueue
+## asyncQueue
 
 `(tasks: Array<Function>, option?: Option) => ReturnValue`
 
-创建异步队列
+创建异步队列，具体说明如下
 
-**task**
+### task
 
 等待执行的任务列表，传递值必须为`Array<Function>`
 
-**option**
+### option
 
 | 名称         | 类型                                      | 默认值  | 描述                                                          |
 | ------------ | ----------------------------------------- | ------- | ------------------------------------------------------------- |
@@ -68,7 +62,7 @@ import { asyncQueue } from '@boses/async-queue';
 | retryCount   | `number` or `false`                       | `0`     | 每个任务重试次数                                              |
 | flowMode     | `boolean` or `false`                      | `false` | 是否为流模式，默认为并发模式                                  |
 
-**ReturnValue**
+### ReturnValue
 
 | 名称           | 类型                                                                     | 描述                                                                              |
 | -------------- | ------------------------------------------------------------------------ | --------------------------------------------------------------------------------- |
@@ -83,20 +77,7 @@ import { asyncQueue } from '@boses/async-queue';
 | addListener    | `(fn: Function): { cancen: () => void }`                                 | 添加监听器，返回的`cancel`方法跟`removeListener`一个作用                          |
 | removeListener | `(fn: Function) => void`                                                 | 删除监听器                                                                        |
 
-### packing
-
-`packing: (value: any) => Function`
-
-将参数转化为`() => value`函数形式
-
-### packingArray
-
-`packingArray: (value: any, ...rest: Array<any>) => Array<Function>`
-
-将以下情况转化为函数数组
-
-- 传递`([1,2])`的形式，转化为`[() => 1, () => 2]`
-- 传递`(1)`的形式，转化为`[() => 1]`
+> 注意：`addListener`添加的监听器会在任务完成自动`removeListener`，所以不是中途取消监听，无需手动调用。
 
 ## 例子
 
@@ -155,6 +136,44 @@ const tasks = Array.from({ length: 1000 }).fill('').map(task);
 asyncQueue(tasks, { max: 100, waitTaskTime: 10 }).then((res) => {
   app.appendChild(ul);
 });
+```
+
+## 兼容性
+
+支持现代浏览器，因为使用了`WeakMap`、`definePropertie`等特性，所以在使用`webpack`等构建工具时，让务必让`babel`转译此模块。
+
+### [Vue CLI](https://cli.vuejs.org/zh/)
+
+```js
+//  vue.config.js
+module.exports = {
+  transpileDependencies: ['@boses/async-queue'],
+};
+```
+
+### [webpack](https://webpack.js.org/)
+
+```js
+module: {
+  rules: [
+    {
+      test: /\.m?js$/,
+      exclude: (modulePath) => {
+        // 禁止过滤
+        if (modulePath.includes('@boses/async-queue')) {
+          return false;
+        }
+        return /node_modules/.test(modulePath);
+      },
+      use: {
+        loader: 'babel-loader',
+        options: {
+          presets: ['@babel/preset-env'],
+        },
+      },
+    },
+  ];
+}
 ```
 
 ## 协议
