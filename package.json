@@ -1,6 +1,6 @@
 {
   "name": "@boses/async-queue",
-  "version": "1.0.1",
+  "version": "1.0.3",
   "preview": false,
   "license": "MIT",
   "description": "Manage asynchronous queues",
