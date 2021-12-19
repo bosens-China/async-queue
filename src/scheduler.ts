@@ -1,4 +1,4 @@
-import { Change, Option } from './type';
+import { Change, Options } from './type';
 import Event from './event';
 import { isFunction, wait } from './utils';
 
@@ -8,7 +8,7 @@ enum executionStatus {
 }
 
 class Scheduler {
-  option: Option;
+  option: Options;
   tasks: Array<Function>;
   state: 'start' | 'suspend' | 'operation' | 'end' | 'error' = 'start';
   // 重试的次数，用WeakMap是为了防止出现垃圾回收问题
@@ -29,7 +29,7 @@ class Scheduler {
   // 执行结果
   resultSymbol = Symbol('result');
 
-  constructor(tasks: Array<Function>, option: Option, event: Event) {
+  constructor(tasks: Array<Function>, option: Options, event: Event) {
     this.option = option;
     // 参数校验，必须接收function
     this.tasks = tasks.map((fn) => {

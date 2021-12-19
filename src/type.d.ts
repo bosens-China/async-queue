@@ -1,4 +1,22 @@
-export interface Option {
+export interface SingleOptions {
+  /**
+   * 是否抛出错误，默认为false，在发生错误的时候将错误值记录下来
+   *
+   * @type {boolean}
+   * @memberof Option
+   */
+  throwError: boolean;
+
+  /**
+   *  每个任务重试次数
+   *
+   * @type {number}
+   * @memberof Option
+   */
+  retryCount: number;
+}
+
+export interface Options extends SingleOptions {
   /**
    * 最大请求数
    *
@@ -22,22 +40,6 @@ export interface Option {
    * @memberof Option
    */
   waitTaskTime: number | (() => number);
-
-  /**
-   * 是否抛出错误，默认为false，在发生错误的时候将错误值记录下来
-   *
-   * @type {boolean}
-   * @memberof Option
-   */
-  throwError: boolean;
-
-  /**
-   *  每个任务重试次数
-   *
-   * @type {number}
-   * @memberof Option
-   */
-  retryCount: number;
 
   /**
    * 是否为流模式，默认为并发模式
@@ -90,7 +92,7 @@ export interface Change {
   total: number;
 }
 
-export interface MergeValue {
+export interface MergeValues {
   option: Option;
   tasks: Array<Function>;
   state: 'start' | 'suspend' | 'operation' | 'end' | 'error';
@@ -134,3 +136,7 @@ export interface MergeValue {
    */
   removeListener: (fn: Function) => void;
 }
+
+export type fn = (...rest: Array<any>) => any;
+export type Awaited<T> = T extends PromiseLike<infer U> ? U : T;
+export interface AsyncQueueValue<T extends fn> extends MergeValues, Promise<Array<Awaited<ReturnType<T>>>> {}
