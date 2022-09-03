@@ -1,8 +1,8 @@
-import Event from '../src/event';
+import Event from '../event';
 
 test(`event addListener`, () => {
   const event = new Event();
-  expect(() => event.addListener({})).toThrow();
+  expect(() => event.addListener({} as any)).toThrow();
 });
 
 test(`evevt emit`, () => {
@@ -16,7 +16,9 @@ test(`evevt emit`, () => {
 
 test(`event destroy`, () => {
   const event = new Event();
-  const fn = () => {};
+  const fn = () => {
+    //
+  };
   event.addListener(fn);
   expect(event.list.length).toBe(1);
   event.destroy();

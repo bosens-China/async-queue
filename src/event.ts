@@ -3,17 +3,18 @@
  */
 
 import { isFunction } from './utils';
+import type { Fn } from './asyncQueue';
 
 class Event {
-  list: Array<Function> = [];
-  addListener(listener: Function) {
+  list: Array<Fn> = [];
+  addListener(listener: Fn) {
     if (!isFunction(listener)) {
       throw new Error(`listener must be a function!`);
     }
     this.list.push(listener);
   }
 
-  removeListener(listener: Function) {
+  removeListener(listener: Fn) {
     const index = this.list.indexOf(listener);
     if (index <= -1) {
       return;

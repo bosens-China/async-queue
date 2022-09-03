@@ -9,12 +9,7 @@
       "request": "launch",
       "name": "ts-node",
       // 参考 https://gist.github.com/cecilemuller/2963155d0f249c1544289b78a1cdd695
-      "runtimeArgs": [
-        "-r",
-        "ts-node/register/transpile-only",
-        "-r",
-        "${workspaceFolder}/node_modules/tsconfig-paths/register"
-      ],
+      "runtimeArgs": ["-r", "ts-node/register/transpile-only"],
       "args": ["${file}"],
       "env": {
         "NODE_ENV": "development",

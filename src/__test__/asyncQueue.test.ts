@@ -1,6 +1,6 @@
 /* eslint-disable prefer-promise-reject-errors */
-import { asyncQueue } from '../src/main';
-import { wait, isFunction } from '../src/utils';
+import { asyncQueue } from '../asyncQueue';
+import { wait, isFunction } from '../utils';
 
 // 本次测试所用到方法
 
@@ -34,8 +34,8 @@ const packing = (value) => {
  * 1. 直接传递([1,2])的形式
  * 2. 传递(1)形式
  */
-const packingArray = (value, ...rest) => {
-  const arr = [];
+const packingArray = (value: any | Array<any>, ...rest) => {
+  const arr: any[] = [];
   if (rest.length) {
     arr.push(value);
     arr.push(...rest);
@@ -50,12 +50,12 @@ const packingArray = (value, ...rest) => {
 };
 
 // 测试正式开始
-test('asyncQueue base Option', async () => {
-  expect(() => asyncQueue({})).toThrow();
-  expect(() => asyncQueue([1])).toThrow();
+test('asyncQueue base Options', async () => {
+  expect(() => asyncQueue({} as any)).toThrow();
+  expect(() => asyncQueue([1] as any)).toThrow();
   const result = asyncQueue([]);
-  expect(result.option).toEqual({
-    max: 1,
+  expect(result.options).toEqual({
+    max: 2,
     waitTime: 0,
     waitTaskTime: 0,
     throwError: false,
@@ -74,11 +74,11 @@ test('asyncQueue base tasks', async () => {
 
 test(`asyncQueue tasks error`, async () => {
   const result = await asyncQueue(packingArray(Promise.reject(1), 123));
-  expect(result).toEqual([new Error(1), 123]);
+  expect(result).toEqual([new Error('1'), 123]);
   await expect(asyncQueue(packingArray(Promise.reject(1), 123), { throwError: true })).rejects.toThrowError(/1/);
 });
 
-test(`asyncQueue option.retry`, async () => {
+test(`asyncQueue options.retry`, async () => {
   let i = 0;
   const pro = () => {
     if (i >= 2) {
@@ -89,10 +89,10 @@ test(`asyncQueue option.retry`, async () => {
   const result = await asyncQueue(packingArray(pro), { retryCount: 2 });
   expect(result).toEqual([2]);
   i = 0;
-  await expect(asyncQueue(packingArray(pro), { retryCount: 1 })).resolves.toEqual([new Error(1)]);
+  await expect(asyncQueue(packingArray(pro), { retryCount: 1 })).resolves.toEqual([new Error('1')]);
 });
 
-test(`asyncQueue option.retry-waitTime`, async () => {
+test(`asyncQueue options.retry-waitTime`, async () => {
   let i = 0;
   const pro = () => {
     if (i > 3) {
@@ -106,7 +106,7 @@ test(`asyncQueue option.retry-waitTime`, async () => {
   }, 400);
 });
 
-test(`asyncQueue option.maxAll`, async () => {
+test(`asyncQueue options.maxAll`, async () => {
   const pro1 = () => wait(100).then(() => 1);
   const pro2 = () => wait(200).then(() => 2);
   const pro3 = () => wait(300).then(() => 3);
@@ -114,7 +114,7 @@ test(`asyncQueue option.maxAll`, async () => {
     await expect(asyncQueue(packingArray(pro1, pro2, pro3), { max: 3 })).resolves.toEqual([1, 2, 3]);
   }, 300);
 });
-test(`asyncQueue option.max`, async () => {
+test(`asyncQueue options.max`, async () => {
   const pro1 = () => wait(100).then(() => 1);
   const pro2 = () => wait(200).then(() => 2);
   const pro3 = () => wait(300).then(() => 3);
@@ -123,7 +123,7 @@ test(`asyncQueue option.max`, async () => {
   }, 600);
 });
 
-test('asyncQueue option.flowMode on', async () => {
+test('asyncQueue options.flowMode on', async () => {
   const pro1 = () => wait(100).then(() => 1);
   const pro2 = () => wait(200).then(() => 2);
   const pro3 = () => wait(300).then(() => 3);
@@ -134,7 +134,7 @@ test('asyncQueue option.flowMode on', async () => {
     ]);
   }, 500);
 });
-test('asyncQueue option.flowMode off', async () => {
+test('asyncQueue options.flowMode off', async () => {
   const pro1 = () => wait(100).then(() => 1);
   const pro2 = () => wait(200).then(() => 2);
   const pro3 = () => wait(300).then(() => 3);
@@ -147,24 +147,24 @@ test('asyncQueue option.flowMode off', async () => {
   }, 600);
 });
 
-test(`asyncQueue option.waitTime Do not execute`, async () => {
+test(`asyncQueue options.waitTime Do not execute`, async () => {
   /*
    * 只有一个不会继续执行 waitTime
    */
   await asyncTime(async () => {
-    const reuslt = await asyncQueue(packingArray(1), { waitTime: 200 });
+    const reuslt = await asyncQueue(packingArray(1), { waitTime: 200, max: 1 });
     expect(reuslt).toEqual([1]);
   }, 0);
   await asyncTime(async () => {
-    const reuslt = await asyncQueue(packingArray(1, 2), { waitTime: 200 });
+    const reuslt = await asyncQueue(packingArray(1, 2), { waitTime: 200, max: 1 });
     expect(reuslt).toEqual([1, 2]);
   }, 200);
 });
 
-test(`asyncQueue option.waitTime function`, async () => {
+test(`asyncQueue options.waitTime function`, async () => {
   await asyncTime(async () => {
     const fn = jest.fn(() => 200);
-    const reuslt = await asyncQueue(packingArray(1, 2), { waitTime: fn });
+    const reuslt = await asyncQueue(packingArray(1, 2), { waitTime: fn, max: 1 });
     // 测试传递的值
     expect(fn.mock.calls.length).toBe(1);
     expect(fn.mock.calls[0]).toEqual([0]);
@@ -179,17 +179,17 @@ test(`asyncQueue option.waitTime function`, async () => {
   }, 0);
   await asyncTime(async () => {
     const fn = jest.fn(() => 300);
-    const reuslt = await asyncQueue(packingArray(1, 2), { waitTaskTime: fn });
+    const reuslt = await asyncQueue(packingArray(1, 2), { waitTaskTime: fn, max: 1 });
     expect(fn.mock.calls.length).toBe(1);
     expect(reuslt).toEqual([1, 2]);
   }, 300);
 });
 
-test(`asyncQueue option.waitTime + option.waitTaskTime`, async () => {
+test(`asyncQueue options.waitTime + options.waitTaskTime`, async () => {
   await asyncTime(async () => {
     const waitTaskTime = jest.fn(() => 100);
     const waitTime = jest.fn(() => 100);
-    const reuslt = await asyncQueue(packingArray(1, 2, 3), { waitTaskTime, waitTime });
+    const reuslt = await asyncQueue(packingArray(1, 2, 3), { waitTaskTime, waitTime, max: 1 });
     expect(waitTaskTime.mock.calls.length).toBe(2);
     expect(waitTime.mock.calls.length).toBe(2);
     expect(waitTime.mock.calls).toEqual([[0], [1]]);
@@ -212,7 +212,7 @@ test(`asyncQueue methods.termination`, async () => {
   const result = asyncQueue(packingArray(1, 2, 3, 4), { waitTime: 10 });
   await wait(10);
   result.termination();
-  await expect(result).resolves.toEqual([1]);
+  await expect(result).resolves.toEqual([1, 2]);
 });
 
 test(`asyncQueue methods.tasks + methods.push`, async () => {
@@ -247,16 +247,19 @@ test(`asyncQueue state error`, async () => {
   const result = asyncQueue(packingArray(Promise.reject(123)), { throwError: true });
   try {
     await result;
-  } catch {}
+  } catch {
+    //
+  }
   expect(result.state).toBe('error');
 });
 
 test(`asyncQueue methods.addListener`, async () => {
   const fn = jest.fn();
-  const result = asyncQueue(packingArray(1, 2, 3));
+  const result = asyncQueue(packingArray(1, 2, 3), { max: 1 });
   result.addListener(fn);
   await result;
   expect(fn.mock.calls.length).toBe(3);
+
   expect(fn.mock.calls).toEqual([
     [
       {
@@ -288,14 +291,6 @@ test(`asyncQueue methods.addListener`, async () => {
   ]);
 });
 
-test(`asyncQueue addListener oncalcel`, async () => {
-  const fn = jest.fn();
-  const result = asyncQueue(packingArray(1, 2, 3));
-  const value = result.addListener(fn);
-  value.cancen();
-  await result;
-  expect(fn.mock.calls.length).toBe(0);
-});
 test(`asyncQueue methods.removeListener`, async () => {
   const fn = jest.fn();
   const result = asyncQueue(packingArray(1, 2, 3));

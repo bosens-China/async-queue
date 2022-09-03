@@ -1,16 +1,14 @@
-export const isFunction = (fn: any): fn is Function => typeof fn === 'function';
+import type { Fn } from './asyncQueue';
 
-export const isObjectLink = (obj: any): obj is Record<any, any> => typeof obj === 'object' && obj;
-
-export const isObject = (obj: any): obj is object => isFunction(obj) || isObjectLink(obj);
+export const isFunction = (fn: any): fn is Fn => typeof fn === 'function';
 
 /**
  * 等待
+ *
+ * @param {number} time
+ * @return {*}
  */
 export const wait = (time: number) => {
-  if (!Number(time)) {
-    return Promise.resolve();
-  }
   return new Promise((resolve) => {
     setTimeout(() => {
       resolve(undefined);
@@ -19,15 +17,18 @@ export const wait = (time: number) => {
 };
 
 /**
- * 简单版oject.assign
- * 主要是为了解决assing拷贝get和set属性失效问题
+ * 返回随机数
+ *
+ * @param {number} min
+ * @param {number} max
+ * @param {boolean} [integer=true] 是否为整数
+ * @return {*}
  */
-export const assign = <S, T>(proto: S, ...propertiesObject: Array<T>): S & T => {
-  const obj = (isObject(proto) ? proto : {}) as S & T;
-  propertiesObject.forEach((item) => {
-    if (isObject(item)) {
-      Object.defineProperties(obj, Object.getOwnPropertyDescriptors(item));
-    }
-  });
-  return obj;
+export const random = (min: number, max: number, integer = true) => {
+  const large = Math.max(min, max);
+  const small = Math.min(min, max);
+  if (integer) {
+    return Math.floor(Math.random() * (large - small + 1)) + small;
+  }
+  return Math.random() * (large - small) + small;
 };

@@ -1,4 +1,4 @@
-import { asyncQueueSingle } from '../src/asyncQueue';
+import { asyncQueueSingle } from '../asyncQueue';
 
 test(`done`, async () => {
   await expect(asyncQueueSingle(() => 1)).resolves.toBe(1);
@@ -6,7 +6,7 @@ test(`done`, async () => {
 });
 
 test(`选项去除`, async () => {
-  const result = asyncQueueSingle(() => 1);
+  const result = asyncQueueSingle(() => 1) as any;
   expect(result.push).toBeUndefined();
   expect(result.operation).toBeUndefined();
 });

@@ -3,19 +3,17 @@ module.exports = {
     browser: true,
     es2021: true,
     node: true,
-    jest: true,
   },
-  extends: ['standard', 'prettier'],
+  extends: ['eslint:recommended', 'plugin:@typescript-eslint/recommended', 'prettier'],
+  overrides: [],
   parser: '@typescript-eslint/parser',
   parserOptions: {
-    ecmaVersion: 13,
+    ecmaVersion: 'latest',
     sourceType: 'module',
   },
   plugins: ['@typescript-eslint', 'prettier'],
   rules: {
-    indent: 'off',
-    '@typescript-eslint/indent': ['error', 2],
     'prettier/prettier': 'error',
-    'no-unused-vars': 'off',
+    '@typescript-eslint/no-explicit-any': 'off',
   },
 };
