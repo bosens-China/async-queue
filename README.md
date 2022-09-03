@@ -39,6 +39,7 @@ const App = async () => {
     },
   ];
   const result = await asyncQueue(getRquire);
+  console.log(result);
 };
 
 App();
@@ -60,9 +61,9 @@ async-queue 暴露三个 api
 
 #### tasks
 
-等待执行的任务列表，传递值必须为`Array<Function>`。
+等待执行的任务列表，传递值必须为 `Array<Function>`。
 
-> 你可能会疑惑，为什么要求必须为`() => xxx`的形式？
+> 你可能会疑惑，为什么要求必须为 `() => xxx` 的形式？
 >
 > 这是因为大多数的情况下任务都是通过函数形式调用，例如给定一个 tasks 通常情况下它会完成一次网络请求或执行一次操作，如果不通过函数形式调用，它的值始终为固定形式。
 >
@@ -143,7 +144,7 @@ asyncQueue 的返回值，具体返回值如下。
 
 ## 例子
 
-## 链式调用
+### 链式调用
 
 ```js
 import { asyncQueue, wait } from '@boses/async-queue';
@@ -193,7 +194,7 @@ const App = async () => {
 App();
 ```
 
-## 批量插入 element
+### 批量插入 element
 
 ```js
 import { asyncQueue } from '@boses/async-queue';
@@ -216,6 +217,27 @@ const tasks = Array.from({ length: 1000 }).fill('').map(task);
 asyncQueue(tasks, { max: 100, waitTaskTime: 10 }).then((res) => {
   app.appendChild(ul);
 });
+```
+
+### 重试
+
+对于爬虫之类的任务，你可能想着可以失败后重试，在 asyncQueue 中可以轻松实现，只需要指定 retryCount 属性即可。
+
+下面是一个示例，在计次小于 3 的时候一致失败
+
+```js
+import { asyncQueue } from '@boses/async-queue';
+
+let i = 0;
+const fn = async () => {
+  if (++i < 3) {
+    throw new Error(`error`);
+  }
+  return i;
+};
+
+const result = await asyncQueueSingle(fn, { retryCount: 3 });
+// result to 3
 ```
 
 ## 兼容性

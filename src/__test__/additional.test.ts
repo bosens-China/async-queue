@@ -16,7 +16,7 @@ test(`create`, async () => {
   await expect(result).resolves.toEqual([1]);
   let i = 0;
   const fn = async () => {
-    if (++i <= 2) {
+    if (++i < 3) {
       throw new Error(`error`);
     }
     return i;

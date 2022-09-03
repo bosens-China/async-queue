@@ -1,4 +1,5 @@
 import Scheduler from './scheduler';
+import type { Change } from './scheduler';
 import Event from './event';
 import { isFunction } from './utils';
 
@@ -101,7 +102,7 @@ class AsyncQueue<T extends Fn> extends Scheduler {
    * @return {*}
    * @memberof AsyncQueue
    */
-  addListener(fn: Fn) {
+  addListener(fn: (values: Change) => void) {
     this.event.addListener(fn);
     return this;
   }
