@@ -1,26 +1,18 @@
-import Event from '../event';
+import { Event } from '../event';
 
-test(`event addListener`, () => {
-  const event = new Event();
-  expect(() => event.addListener({} as any)).toThrow();
-});
-
-test(`evevt emit`, () => {
+test(`event`, () => {
   const event = new Event();
   const fn = jest.fn();
   event.addListener(fn);
-  event.emit(1, 2, 3);
-  expect(fn.mock.calls[0]).toEqual([1, 2, 3]);
-  expect(fn.mock.calls.length).toBe(1);
-});
-
-test(`event destroy`, () => {
-  const event = new Event();
-  const fn = () => {
-    //
-  };
   event.addListener(fn);
-  expect(event.list.length).toBe(1);
-  event.destroy();
-  expect(event.list.length).toBe(0);
+  expect(event.list).toHaveLength(2);
+  expect(fn.mock.calls).toHaveLength(0);
+  event.emit(1);
+  expect(fn.mock.calls).toHaveLength(2);
+  expect(fn.mock.calls).toEqual([[1], [1]]);
+  event.removeListener(fn);
+  expect(event.list).toHaveLength(0);
+  expect(event.addListener(fn));
+  event.removeListener();
+  expect(event.list).toHaveLength(0);
 });

@@ -1,12 +1,24 @@
-import { asyncQueueSingle } from '../asyncQueue';
+import { asyncQueueSingle } from '../index';
 
-test(`done`, async () => {
+test(`base`, async () => {
   await expect(asyncQueueSingle(() => 1)).resolves.toBe(1);
-  await expect(asyncQueueSingle(() => Promise.resolve('1'))).resolves.toBe('1');
 });
 
-test(`选项去除`, async () => {
-  const result = asyncQueueSingle(() => 1) as any;
-  expect(result.push).toBeUndefined();
-  expect(result.operation).toBeUndefined();
+test(`base`, async () => {
+  let i = 0;
+  const fn = async () => {
+    if (++i < 3) {
+      throw new Error(`error`);
+    }
+    return i;
+  };
+  await expect(asyncQueueSingle(fn, { retryCount: 2 })).resolves.toBe(3);
+
+  i = 0;
+  await expect(asyncQueueSingle(fn, { retryCount: 1 })).rejects.toThrow('error');
+});
+
+test(`throwError`, async () => {
+  await expect(asyncQueueSingle(() => Promise.reject(1))).rejects.toThrow('1');
+  await expect(asyncQueueSingle(() => Promise.reject(1), { throwError: false })).resolves.toThrow('1');
 });

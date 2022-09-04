@@ -1,36 +1,27 @@
-/*
- * 简易版发布订阅
- */
+export type Fn<T = any> = (...rest: any) => T;
 
-import { isFunction } from './utils';
-import type { Fn } from './asyncQueue';
+export class Event {
+  public list: Array<Fn> = [];
 
-class Event {
-  list: Array<Fn> = [];
-  addListener(listener: Fn) {
-    if (!isFunction(listener)) {
-      throw new Error(`listener must be a function!`);
-    }
-    this.list.push(listener);
-  }
-
-  removeListener(listener: Fn) {
-    const index = this.list.indexOf(listener);
-    if (index <= -1) {
+  removeListener(listener?: Fn) {
+    if (listener) {
+      // 这里可能存在多条相同，所以全部删除引用相同的
+      let index = this.list.indexOf(listener);
+      while (index > -1) {
+        this.list.splice(index, 1);
+        index = this.list.indexOf(listener);
+      }
       return;
     }
-    this.list.splice(index, 1);
-  }
-
-  emit<T = any>(...rest: Array<T>) {
-    this.list.forEach((fn) => {
-      fn(...rest);
-    });
-  }
-
-  destroy() {
     this.list = [];
   }
-}
 
-export default Event;
+  addListener(listener: Fn) {
+    this.list.push(listener);
+  }
+  emit<T = any>(values: T) {
+    this.list.forEach((fn) => {
+      fn(values);
+    });
+  }
+}

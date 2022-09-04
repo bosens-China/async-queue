@@ -1,12 +1,11 @@
 import { asyncQueue, asyncQueueSingle } from './asyncQueue';
 
-import type { Options } from './asyncQueue';
+import type { Options } from './scheduler';
 
 /**
- * 传递配置项，返回使用配置项的 asyncQueue asyncQueueSingle方法
+ * 根据配置项，返回 asyncQueue asyncQueueSingle
  *
  * @param {Partial<Options>} [options]
- * @return {*}
  */
 export const create = (options?: Partial<Options>) => {
   return {
@@ -18,6 +17,6 @@ export const create = (options?: Partial<Options>) => {
     }) as typeof asyncQueueSingle,
   };
 };
-export { wait, random } from './utils';
+export { sleep, random } from './utils';
 
 export * from './asyncQueue';

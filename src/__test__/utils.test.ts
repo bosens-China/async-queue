@@ -1,5 +1,6 @@
-import { isFunction, wait, random } from '../utils';
+import { sleep, random, isFunction } from '../utils';
 
+// 添加自定义的匹配器
 expect.extend({
   toBeWithinRange(received, floor, ceiling) {
     const pass = received >= floor && received <= ceiling;
@@ -23,19 +24,31 @@ test(`isFunction`, () => {
       //
     }),
   ).toBeTruthy();
-  expect(isFunction({})).toBeFalsy();
-});
 
-test(`wait`, async () => {
-  const time = +new Date();
-  await wait(100);
-  expect(+new Date() - time >= 100).toBeTruthy();
+  expect(
+    isFunction(function test() {
+      //
+    }),
+  ).toBeTruthy();
+  expect(isFunction({} as any)).toBeFalsy();
 });
 
 test(`random`, () => {
-  (expect(random(0, 1)) as any).toBeWithinRange(0, 1);
+  (expect(random(10, 20)) as any).toBeWithinRange(10, 20);
+  (expect(random(1.1, 10.1, false)) as any).toBeWithinRange(1.1, 10.1);
+  (expect(random(1, 10)) as any).not.toBeWithinRange(11, 20);
 });
 
-test(`random floor`, () => {
-  (expect(random(1.1, 10.11)) as any).toBeWithinRange(1.1, 10.11, true);
+test(`sleep`, async () => {
+  async function foo<T>(fn: () => T, waitMs: number): Promise<T> {
+    await sleep(waitMs);
+    return fn();
+  }
+  jest.useFakeTimers();
+  const fn = jest.fn(() => 3);
+  const retVal = foo(fn, 1000);
+  expect(fn).not.toBeCalled();
+  await Promise.resolve().then(() => jest.advanceTimersByTime(1000));
+  expect(fn).toHaveBeenCalledTimes(1);
+  await expect(retVal).resolves.toBe(3);
 });

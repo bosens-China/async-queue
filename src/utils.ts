@@ -1,28 +1,26 @@
-import type { Fn } from './asyncQueue';
-
-export const isFunction = (fn: any): fn is Fn => typeof fn === 'function';
+import type { Fn } from './event';
 
 /**
- * 等待
+ * 让程序休眠指定时间
  *
  * @param {number} time
- * @return {*}
  */
-export const wait = (time: number) => {
+export const sleep = (time: number) => {
   return new Promise((resolve) => {
-    setTimeout(() => {
-      resolve(undefined);
-    }, time);
+    setTimeout(resolve, time);
   });
 };
 
+export const isFunction = (obj: any): obj is Fn => {
+  return typeof obj === 'function';
+};
+
 /**
- * 返回随机数
+ * 生成指定区间随机数
  *
- * @param {number} min
- * @param {number} max
+ * @param {number} min 最小值
+ * @param {number} max 最大值
  * @param {boolean} [integer=true] 是否为整数
- * @return {*}
  */
 export const random = (min: number, max: number, integer = true) => {
   const large = Math.max(min, max);

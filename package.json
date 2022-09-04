@@ -1,6 +1,6 @@
 {
   "name": "@boses/async-queue",
-  "version": "1.0.6",
+  "version": "1.0.7",
   "preview": false,
   "license": "MIT",
   "description": "Manage asynchronous queues",
@@ -15,9 +15,9 @@
   "files": [
     "dist"
   ],
-  "main": "./dist/cjs/main.js",
-  "module": "./dist/es/main.js",
-  "types": "./dist/es/main.d.ts",
+  "main": "./dist/cjs/index.js",
+  "module": "./dist/es/index.js",
+  "types": "./dist/es/index.d.ts",
   "devDependencies": {
     "@types/jest": "^29.0.0",
     "@types/node": "^18.7.14",
