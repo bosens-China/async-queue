@@ -25,7 +25,7 @@ yarn add @boses/async-queue
 
 ```js
 import { asyncQueue } from '@boses/async-queue';
-// or commonjs 引用方式
+// commonjs 引用方式
 // const { asyncQueue } = require('@boses/async-queue');
 
 const App = async () => {
@@ -85,7 +85,7 @@ async-queue 暴露三个 api
 | waitTime     | `number` or `((index: number, retry: number) => number)` | 0      | 每次请求前等待时间，index 为任务索引 retry 为重试次数（在并发模式下，max > index 的索引都不会执行此选项，而在流模式，第一个索引也不会执行） |
 | waitTaskTime | `number` or `(() => number)`                             | 0      | 每批任务结束后等待时间，**注意**在 `flowMode` 模式下不起作用（在最后一批任务不受此影响）                                                    |
 | throwError   | `boolean`                                                | true   | 是否抛出错误，如果为 false 会把错误值当结果记录下来                                                                                         |
-| retryCount   | `number`                                                 | 0      | 任务重试次数                                                                                                                                |
+| retryCount   | `number`                                                 | 0      | 任务重试次数，你可以理解成额外运行次数，例如重试为 3，则这个程序最多运行 4 次                                                               |
 | flowMode     | `boolean`                                                | true   | 是否为流模式，并发和流的区别可以查看文档开头开头例子                                                                                        |
 
 #### defaults
@@ -210,7 +210,7 @@ asyncQueue(tasks, { max: 100, waitTaskTime: 10 }).then((res) => {
 
 对于爬虫之类的任务，你可能想着可以失败后重试，在 asyncQueue 中可以轻松实现，只需要指定 retryCount 属性即可。
 
-下面是一个示例，在计次小于 3 的时候一致失败
+下面是一个示例，在计次小于 3 的时候一直失败
 
 ```js
 import { asyncQueue } from '@boses/async-queue';
@@ -223,13 +223,13 @@ const fn = async () => {
   return i;
 };
 
-const result = await asyncQueueSingle(fn, { retryCount: 3 });
+const result = await asyncQueueSingle(fn, { retryCount: 2 });
 // result to 3
 ```
 
 ## 兼容性
 
-支持现代浏览器，因为使用了 `WeakMap`、`proxy` 等特性，所以在使用 `webpack` 等构建工具时，让务必让 `babel` 转译此模块。
+支持现代浏览器，因为使用了 `proxy` 等特性，所以在使用 `webpack` 等构建工具时，让务必让 `babel` 转译此模块。
 
 ### [Vue CLI](https://cli.vuejs.org/zh/)
 
