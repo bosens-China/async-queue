@@ -77,7 +77,7 @@ export interface Options {
    *
    * @memberof Options
    */
-  waitTime: number | ((index?: number) => number);
+  waitTime: number | ((index: number, retry: number) => number);
   /**
    * 每批次任务结束等待时间，注意 flowMode模式下无效
    *
@@ -173,13 +173,6 @@ export class Scheduler {
     if (!current.length) {
       return this.next();
     }
-    // 如果并发模式
-    const { flowMode, waitTime } = this.options;
-    if (!flowMode) {
-      await sleep(isFunction(waitTime) ? waitTime() : waitTime);
-      this.queues.push(...current.map((fn) => this.retry(fn)));
-      return this.next();
-    }
     this.queues.push(...current.map((fn) => this.retry(this.wait(fn))));
     this.next();
   }
@@ -254,10 +247,17 @@ export class Scheduler {
 
   // 流模式下，包裹函数执行每批次前的等待
   private wait(task: Tasks) {
-    const { index, fn } = task;
+    const { index, fn, retry } = task;
     task.fn = () => {
-      const { waitTime } = this.options;
-      return sleep(isFunction(waitTime) ? waitTime(index) : waitTime).then(() => {
+      const { waitTime, flowMode, max } = this.options;
+      // 首次的时候不应当限制
+      if (flowMode && index === 0) {
+        return fn();
+      }
+      if (!flowMode && max > index) {
+        return fn();
+      }
+      return sleep(isFunction(waitTime) ? waitTime(index, retry) : waitTime).then(() => {
         return fn();
       });
     };

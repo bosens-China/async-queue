@@ -15,12 +15,14 @@ test(`max`, async () => {
     }),
     { max: 1, waitTime: 100 },
   );
-  expect(arr).toEqual([]);
-  await sleep(100);
   expect(arr).toEqual([1]);
-  await sleep(100);
+  /*
+   * 这样测试有些不准确，不过严格按照100来，按照微任务队列并不能一定保证有值
+   * 后续想办法解决
+   */
+  await sleep(150);
   expect(arr).toEqual([1, 2]);
-  await sleep(100);
+  await sleep(150);
   expect(arr).toEqual([1, 2, 3]);
   await expect(result).resolves.toEqual([1, 2, 3]);
 });
@@ -34,8 +36,11 @@ describe('waitTime', () => {
       }),
       { max: 1, waitTime: fn },
     );
-    expect(fn.mock.calls).toHaveLength(3);
-    expect(fn.mock.calls).toEqual([[0], [1], [2]]);
+    expect(fn.mock.calls).toHaveLength(2);
+    expect(fn.mock.calls).toEqual([
+      [1, 0],
+      [2, 0],
+    ]);
   });
 
   test(`waitTime concurrent`, async () => {
@@ -46,8 +51,11 @@ describe('waitTime', () => {
       }),
       { max: 1, waitTime: fn, flowMode: false },
     );
-    expect(fn.mock.calls).toHaveLength(3);
-    expect(fn.mock.calls).toEqual([[], [], []]);
+    expect(fn.mock.calls).toHaveLength(2);
+    expect(fn.mock.calls).toEqual([
+      [1, 0],
+      [2, 0],
+    ]);
   });
 });
 
