@@ -47,11 +47,13 @@ App();
 
 ## Api
 
-async-queue 暴露三个 api
+async-queue 暴露五个 api
 
 - [asyncQueue](#asyncQueue)，管理异步队列
 - [SingleOptions](#SingleOptions)，管理单次任务
 - [create](#create)，根据 [options](#options) 返回 [asyncQueue](#asyncQueue)、[SingleOptions](#SingleOptions)
+- [sleep](#sleep)，让程序在给定时间内休眠
+- [random](#random)，返回随机数或者随机浮点数
 
 ### asyncQueue
 
@@ -132,6 +134,29 @@ asyncQueue 的返回值，具体返回值如下。
 每次创建任务都需要填写相同的配置项，你会觉得繁琐这也是为什么有 create 这个方法的原因，它接收一个 [options](#options)。
 
 返回值为 asyncQueue 以及 asyncQueueSingle
+
+### sleep
+
+`const sleep = (time: number):Promise<void>`
+
+在一定时间内，让程序等待执行
+
+```js
+await sleep(3000);
+// 3s后执行这条语句
+console.log(`被执行`);
+```
+
+### random
+
+`const random = (min: number, max: number, integer = true):number`
+
+返回传递 min 和 max 区间的数，integer 决定是否返回整数
+
+```js
+// 返回1-10之间的整数
+const num = random(1, 10);
+```
 
 ## 例子
 
@@ -268,6 +293,15 @@ module: {
 ## 其他
 
 如果你有其他建议欢迎反馈和 pr
+
+### 升级计划
+
+之后会对版本的 options 进行调整，支持以下选项
+
+- addListener 新增 this，可以通过 this 来修改 options
+- 拓展 waitTime 属性，让其支持函数或者对象
+  - ignoreFirst 决定是否忽略首次不执行 waitTime 限制
+  - retryIgnore 重试是否受 waitTime 参数影响
 
 ### 待完成工作
 
