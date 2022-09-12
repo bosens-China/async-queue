@@ -302,6 +302,7 @@ module: {
 - 拓展 waitTime 属性，让其支持函数或者对象
   - ignoreFirst 决定是否忽略首次不执行 waitTime 限制
   - retryIgnore 重试是否受 waitTime 参数影响
+- 调整强制 error 参数为 Error 类型，如果是对象会导致报错信息丢失，改为任意
 
 ### 待完成工作
 
